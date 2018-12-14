@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Auction view</title>
+	<link rel="stylesheet" href="">
+</head>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+var socket = io();
+var accounts = [];
+var user = null;
+var actual = {id: -1};
+
+function find(data, id) {
+	for (var i = 0; i < data.length; i++)
+		if (data[i].id == id)
+			return data[i];
+	return null;
+}
+
+function updateAccounts(debtors) {
+	 console.log(debtors)
+	 accounts = debtors;
+}
+
+function show(accs, auctions) {
+	document.getElementById('auctionTable').innerHTML = getAuctionTitle() + toDebtRows(accs, auctions);
+}
+
+function getAuctionTitle() {
+	return "<tr><th>Deuda</th><th>Score</th><th></th></tr>";
+}
+
+function toDebtRows(accs, auctions) {
+	var html = "";
+	for (var i = 0; i < accs.length; i++) {
+		if (isInAuctions(accounts[i].id, auctions)) {
+			html += "<tr><th>" + accs[i].debt + "</th><th>" + accs[i].score + 
+					"</th><th id='debtor" + accs[i].id + "'>participating</th></tr>";
+		} else {
+			html += "<tr><th>" + accs[i].debt + "</th><th>" + accs[i].score + 
+					"</th><th id='debtor" + accs[i].id + "'><button type='button' onclick='participate(" + accs[i].id +
+					")'>participate</button></th></tr>";
+		}
+	}
+	return html;
+}
+
+function isInAuctions(id, auctions) {
+	console.log("> isInAuctions");
+	console.log("  > id" + id);
+	console.log("  > auctions" + auctions);
+	for (var j = 0; j < auctions.length; j++)
+		if (id == auctions[j])
+			return true;
+	return false;
+}
+
+
+window.onload = function() {
+	//emitir evento de cargar cuentas
+	console.log("solicitando subastas");
+	socket.emit('ASKDEBTORS');
+	socket.emit('ASKACTUAL');
+	socket.emit('ASKAUCTIONS');
+	//tenemos todas las cuentas para la subasta
+}
+
+
+function participate(id) {
+	//busca id del deudor y lo obtiene del conjunto de deudores y actualiza el estado de su subasta actual luego de activar on click
+	var debtor = find(accounts, id);
+	if (debtor != null) {
+		document.getElementById('debtor' + id).innerHTML =
+			getValueHTML("amount" + actual.id, "Valor: ", 1000, debtor.debt, 1000, 1000) +
+			getValueHTML("rate" + actual.id, "Tasa: ", debtor.min_rate, debtor.max_rate, debtor.max_rate, 0.1) +
+				"<button type='button' onclick='offer(" + id +
+				")'>enviar</button></th>";
+	}
+}
+
+function getValueHTML(id, content, min, max, value, step) {
+	return "<th>" + content + "<input id='" + id + "' type='number' name='' min='" + min +"' value='" + value +"', max='" + max +"'step='" + step + "'></th>";
+}
+
+function offer(id) {
+	var amount = parseFloat(document.getElementById('amount' + actual.id).value);
+	var rate = parseFloat(document.getElementById('rate' + actual.id).value);
+	socket.emit('PARTICIPATE', {id: id, amount: amount, rate: rate});
+}
+
+socket.on('DRAWAUCTIONS', function(debtors){
+	updateAccounts(debtors);
+});
+
+socket.on('RETURNCLIENT', function(client){
+	//actualizar datos de cliente
+});
+
+socket.on('UPDATEACTUAL', function(info){
+	//actualizar datos de cliente
+	console.log("actualizando actual");
+	console.log(info);
+	actual = info;
+});
+
+socket.on('UPDATEAUCTIONS', function(info){
+	//actualizar datos de cliente
+	console.log("actualizando subastas");
+	console.log(info);
+	show(accounts, info);
+});
+
+
+</script>
+<body>
+
+<h1>Subasta</h1>
+<table style="width:100%" id="auctionTable">
+  <tr>
+    <th>Deuda</th>
+    <th>Score</th> 
+    <th></th>
+  </tr>
+</table>
+
+</body>
+</html>

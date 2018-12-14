@@ -25,6 +25,9 @@ const apiEmitter =  apiController.emitter;
 
 */
 
+
+
+
 apiEmitter.on('AUCTIONINFO', function(auctionInfo){
 	console.log("response from api")
 	console.log(auctionInfo);
@@ -67,6 +70,15 @@ viewEmitter.on('GETAUCTIONS', function(){
 
 viewEmitter.on('PARTICIPATE', function(info){
 	apiEmitter.emit('PARTICIPATE', info);
+});
+
+viewEmitter.on('AUTHAPP', function(Client){
+	apiEmitter.emit('AUTHAPP',Client);
+});
+
+apiEmitter.on('CREDENTIALS', function(cre){
+	console.log("Credentials emitted");
+	viewEmitter.emit('TOKENAUTH', cre);
 });
 
 

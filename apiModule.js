@@ -2,12 +2,16 @@ const EventEmmitter = require('events');
 const util = require('util');
 const request =  require('request');
 const examples = require('./examples.js');
+const appCredentials = require('./getAppAuth.js');
+
+var Token;
 
 var innerSocket = new EventEmmitter();
 
-innerSocket.on('AUTH', function(client_id,client_secret,catalog,redirect_uri,scope,response_type){
-   let t = getToken(client_id,client_secret,catalog,redirect_uri,scope,response_type);
-   innerSocket.emit('TOKEN', t);
+innerSocket.on('AUTHAPP', function(){
+   let Credentials = appCredentials.Credentials;
+   console.log("inicio flujo authorization");
+   innerSocket.emit('CREDENTIALS', Credentials);
 });
 
 innerSocket.on('GETCLIENTINFO', function(id){
